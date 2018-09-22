@@ -1,0 +1,51 @@
+Determining if the pthread_create exist failed with the following output:
+Change Dir: /home/liu/Desktop/CMU/cmu15-445/project/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_7f2dc/fast"
+/usr/bin/make -f CMakeFiles/cmTC_7f2dc.dir/build.make CMakeFiles/cmTC_7f2dc.dir/build
+make[1]: Entering directory '/home/liu/Desktop/CMU/cmu15-445/project/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_7f2dc.dir/CheckSymbolExists.c.o
+/usr/bin/cc    -o CMakeFiles/cmTC_7f2dc.dir/CheckSymbolExists.c.o   -c /home/liu/Desktop/CMU/cmu15-445/project/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTC_7f2dc
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_7f2dc.dir/link.txt --verbose=1
+/usr/bin/cc      -rdynamic CMakeFiles/cmTC_7f2dc.dir/CheckSymbolExists.c.o  -o cmTC_7f2dc 
+CMakeFiles/cmTC_7f2dc.dir/CheckSymbolExists.c.o: In function `main':
+CheckSymbolExists.c:(.text+0x1b): undefined reference to `pthread_create'
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_7f2dc.dir/build.make:87: cmTC_7f2dc] Error 1
+make[1]: Leaving directory '/home/liu/Desktop/CMU/cmu15-445/project/build/CMakeFiles/CMakeTmp'
+make: *** [Makefile:126: cmTC_7f2dc/fast] Error 2
+
+File /home/liu/Desktop/CMU/cmu15-445/project/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <pthread.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef pthread_create
+  return ((int*)(&pthread_create))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/liu/Desktop/CMU/cmu15-445/project/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_c540d/fast"
+/usr/bin/make -f CMakeFiles/cmTC_c540d.dir/build.make CMakeFiles/cmTC_c540d.dir/build
+make[1]: Entering directory '/home/liu/Desktop/CMU/cmu15-445/project/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_c540d.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_c540d.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.11/Modules/CheckFunctionExists.c
+Linking C executable cmTC_c540d
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c540d.dir/link.txt --verbose=1
+/usr/bin/cc  -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_c540d.dir/CheckFunctionExists.c.o  -o cmTC_c540d -lpthreads 
+/usr/bin/ld: cannot find -lpthreads
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_c540d.dir/build.make:87: cmTC_c540d] Error 1
+make[1]: Leaving directory '/home/liu/Desktop/CMU/cmu15-445/project/build/CMakeFiles/CMakeTmp'
+make: *** [Makefile:126: cmTC_c540d/fast] Error 2
+
+

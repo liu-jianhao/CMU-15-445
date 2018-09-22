@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="5" failures="0" disabled="0" errors="0" timestamp="2018-09-22T11:04:19" time="5.502" name="AllTests">
+  <testsuite name="ExtendibleHashTest" tests="5" failures="0" disabled="0" errors="0" time="5.502">
+    <testcase name="SampleTest" status="run" time="0" classname="ExtendibleHashTest" />
+    <testcase name="BasicDepthTest" status="run" time="0" classname="ExtendibleHashTest" />
+    <testcase name="BasicRandomTest" status="run" time="5.434" classname="ExtendibleHashTest" />
+    <testcase name="ConcurrentInsertTest" status="run" time="0.027" classname="ExtendibleHashTest" />
+    <testcase name="ConcurrentRemoveTest" status="run" time="0.041" classname="ExtendibleHashTest" />
+  </testsuite>
+</testsuites>

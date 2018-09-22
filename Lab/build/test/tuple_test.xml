@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" timestamp="2018-09-22T11:04:28" time="0.521" name="AllTests">
+  <testsuite name="TupleTest" tests="1" failures="0" disabled="0" errors="0" time="0.521">
+    <testcase name="TableHeapTest" status="run" time="0.521" classname="TupleTest" />
+  </testsuite>
+</testsuites>

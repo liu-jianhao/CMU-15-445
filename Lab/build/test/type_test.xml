@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="5" failures="0" disabled="0" errors="0" timestamp="2018-09-22T11:04:29" time="0.001" name="AllTests">
+  <testsuite name="TypeTests" tests="5" failures="0" disabled="0" errors="0" time="0">
+    <testcase name="InvalidTypeTest" status="run" time="0" classname="TypeTests" />
+    <testcase name="GetInstanceTest" status="run" time="0" classname="TypeTests" />
+    <testcase name="MaxValueTest" status="run" time="0" classname="TypeTests" />
+    <testcase name="MinValueTest" status="run" time="0" classname="TypeTests" />
+    <testcase name="TemplateTest" status="run" time="0" classname="TypeTests" />
+  </testsuite>
+</testsuites>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="9" failures="0" disabled="0" errors="0" timestamp="2018-09-22T11:04:18" time="1.105" name="AllTests">
+  <testsuite name="LockManagerTest" tests="9" failures="0" disabled="0" errors="0" time="1.104">
+    <testcase name="BasicTest" status="run" time="0.001" classname="LockManagerTest" />
+    <testcase name="BasicShareTest" status="run" time="0.101" classname="LockManagerTest" />
+    <testcase name="BasicExclusiveTest" status="run" time="0.1" classname="LockManagerTest" />
+    <testcase name="BasicUpdateTest" status="run" time="0.101" classname="LockManagerTest" />
+    <testcase name="BasicTest1" status="run" time="0.1" classname="LockManagerTest" />
+    <testcase name="BasicTest2" status="run" time="0.2" classname="LockManagerTest" />
+    <testcase name="DeadlockTest1" status="run" time="0.001" classname="LockManagerTest" />
+    <testcase name="DeadlockTest2" status="run" time="0" classname="LockManagerTest" />
+    <testcase name="DeadlockTest3" status="run" time="0.5" classname="LockManagerTest" />
+  </testsuite>
+</testsuites>

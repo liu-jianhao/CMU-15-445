@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="2" failures="0" disabled="0" errors="0" timestamp="2018-09-22T11:04:29" time="10.379" name="AllTests">
+  <testsuite name="VtableTest" tests="2" failures="0" disabled="0" errors="0" time="10.378">
+    <testcase name="BasicTest" status="run" time="3.203" classname="VtableTest" />
+    <testcase name="CreateTest" status="run" time="7.175" classname="VtableTest" />
+  </testsuite>
+</testsuites>
