@@ -67,4 +67,32 @@ Value of: 1
 Expected: rids.size()
 Which is: 0
 ```
-`b_plus_tree_test.cpp:111`之前一句是`tree.GetValue(index_key, rids);`，说明`GetValue`出了问题，
+`rids`是在树叶节点页面才使用的，所以应该是树叶节点插入有问题，或者计数有问题。
+
+果然不出所料，在树叶节点页面的`Insert`方法中在其中一种情况中忘了要插入键值对....
+
+改了之后还有错误：
+```
+test/b_plus_tree_test
+Running main() from gmock_main.cc
+[==========] Running 5 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 5 tests from BPlusTreeTests
+[ RUN      ] BPlusTreeTests.InsertTest1
+[       OK ] BPlusTreeTests.InsertTest1 (0 ms)
+[ RUN      ] BPlusTreeTests.InsertTest2
+[       OK ] BPlusTreeTests.InsertTest2 (0 ms)
+[ RUN      ] BPlusTreeTests.DeleteTest1
+[       OK ] BPlusTreeTests.DeleteTest1 (1 ms)
+[ RUN      ] BPlusTreeTests.DeleteTest2
+/home/liu/Desktop/CMU/CMU-15-445/Lab/test/index/b_plus_tree_test.cpp:297: Failure
+Value of: current_key
+  Actual: 2
+Expected: location.GetSlotNum()
+Which is: 1
+/home/liu/Desktop/CMU/CMU-15-445/Lab/test/index/b_plus_tree_test.cpp:296: Failure
+Value of: 0
+Expected: location.GetPageId()
+Which is: 1
+```
+错误一直循环下去直到程序崩了，
