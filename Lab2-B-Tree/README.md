@@ -95,4 +95,30 @@ Value of: 0
 Expected: location.GetPageId()
 Which is: 1
 ```
-错误一直循环下去直到程序崩了，
+错误一直循环下去直到程序崩了，检查了两天发现原来从别人那里拷贝来的测试实验代码好像有些问题，换了之后虽然程序还有bug，但没有一直循环出现错误。
+```
+$ test/b_plus_tree_test
+Running main() from gmock_main.cc
+[==========] Running 11 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 11 tests from BPlusTreeTests
+[ RUN      ] BPlusTreeTests.InsertTest1
+[       OK ] BPlusTreeTests.InsertTest1 (1 ms)
+[ RUN      ] BPlusTreeTests.InsertTest2
+[       OK ] BPlusTreeTests.InsertTest2 (1 ms)
+[ RUN      ] BPlusTreeTests.InsertScale
+b_plus_tree_test: /home/liu/Desktop/CMU/CMU-15-445/Lab/src/page/b_plus_tree_leaf_page.cpp:94: const std::pair<_T1, _T2>& cmudb::BPlusTreeLeafPage<KeyType, ValueType, KeyComparator>::GetItem(int) [with KeyType = cmudb::GenericKey<8>; ValueType = cmudb::RID; KeyComparator = cmudb::GenericComparator<8>]: Assertion `0 <= index && index < GetSize()' failed.
+[1]    25190 abort      test/b_plus_tree_test
+```
+可以看出是调用`GetItem(int index)`时index超出了范围，先查看哪里调用了这个函数：
+```shell
+$ grep GetItem * -nR
+include/page/b_plus_tree_leaf_page.h:49:  const MappingType &GetItem(int index);
+index/index_iterator.cpp:40:    return leaf_->GetItem(index_);
+page/b_plus_tree_leaf_page.cpp:93:GetItem(int index) {
+page/b_plus_tree_leaf_page.cpp:300:  MappingType pair = GetItem(0);
+page/b_plus_tree_leaf_page.cpp:331:  MappingType pair = GetItem(GetSize()-1);
+```
+排除第一个和第三个函数的声明和定义，后两个肯定不会超范围，所以只能是在迭代器使用时出现了问题。
+
+回过头继续检查
