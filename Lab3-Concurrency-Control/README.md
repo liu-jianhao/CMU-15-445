@@ -37,7 +37,7 @@ Lock Manager 将实施WAIT-DIE策略以预防死锁
 
 它使用一个以数据项名称为索引的散列表来查找链表中的数据项，叫锁表。
 
-
+![](https://github.com/liu-jianhao/CMU-15-445/blob/master/Lab3-Concurrency-Control/%E9%94%81%E8%A1%A8.png)
 
 上图包含五个不同数据项的锁。已授予锁的事务用深色阴影方块表示，等待授予锁的事务用浅色方块。
 
