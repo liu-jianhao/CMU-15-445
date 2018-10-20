@@ -50,3 +50,18 @@ Lock Manager 将实施WAIT-DIE策略以预防死锁
 + 如果一个事务中止，锁管理器删除该事务产生的正在等待加锁的所有请求。
 这个算法保证了锁请求无饿死现象，因为在先前接受到的请求正在等待加锁时，后来者不可能获得授权。
 
+## 任务一调试
+任务一还算比较简单，主要先将锁表的数据结构想好，之后的操作基本上就水到渠成了，但毕竟是多线程的并发，难免会有问题。
+```
+$ test/lock_manager_test
+Running main() from gmock_main.cc
+[==========] Running 9 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 9 tests from LockManagerTest
+[ RUN      ] LockManagerTest.BasicTest
+^C
+```
+测试程序卡住了，运行不下去，难道是有死锁？？
+
+
+## 任务二：并发索引
