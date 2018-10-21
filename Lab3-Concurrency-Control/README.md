@@ -53,16 +53,62 @@ Lock Manager 将实施WAIT-DIE策略以预防死锁
 ## 任务一调试
 任务一还算比较简单，主要先将锁表的数据结构想好，之后的操作基本上就水到渠成了，但毕竟是多线程的并发，难免会有问题。
 ```
-$ test/lock_manager_test
+test/lock_manager_test
 Running main() from gmock_main.cc
 [==========] Running 9 tests from 1 test case.
 [----------] Global test environment set-up.
 [----------] 9 tests from LockManagerTest
 [ RUN      ] LockManagerTest.BasicTest
+[       OK ] LockManagerTest.BasicTest (1 ms)
+[ RUN      ] LockManagerTest.BasicShareTest
+[       OK ] LockManagerTest.BasicShareTest (100 ms)
+[ RUN      ] LockManagerTest.BasicExclusiveTest
+[       OK ] LockManagerTest.BasicExclusiveTest (101 ms)
+[ RUN      ] LockManagerTest.BasicUpdateTest
 ^C
 ```
-测试程序卡住了，运行不下去，难道是有死锁？？
+能通过三个测试，但是最后一样还是卡住了。
 
+找了快一个小时，终于找到了：
+```cpp
+if(it == lock_table_[rid].list.begin() || it->mode == LockMode::EXCLUSIVE)
+{
+  cond.notify_all();
+}
+
+lock_table_[rid].list.erase(it);
+```
+这个是改过之后的，之前错误的代码是将erase语句写在了其上面的if语句之前，因为erase会让迭代器失效，所以后面的操作肯定就是错误的了。
+
+然后就通过测试了：
+```
+[==========] Running 9 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 9 tests from LockManagerTest
+[ RUN      ] LockManagerTest.BasicTest
+[       OK ] LockManagerTest.BasicTest (0 ms)
+[ RUN      ] LockManagerTest.BasicShareTest
+[       OK ] LockManagerTest.BasicShareTest (101 ms)
+[ RUN      ] LockManagerTest.BasicExclusiveTest
+[       OK ] LockManagerTest.BasicExclusiveTest (100 ms)
+[ RUN      ] LockManagerTest.BasicUpdateTest
+[       OK ] LockManagerTest.BasicUpdateTest (101 ms)
+[ RUN      ] LockManagerTest.BasicTest1
+[       OK ] LockManagerTest.BasicTest1 (100 ms)
+[ RUN      ] LockManagerTest.BasicTest2
+[       OK ] LockManagerTest.BasicTest2 (200 ms)
+[ RUN      ] LockManagerTest.DeadlockTest1
+[       OK ] LockManagerTest.DeadlockTest1 (0 ms)
+[ RUN      ] LockManagerTest.DeadlockTest2
+[       OK ] LockManagerTest.DeadlockTest2 (1 ms)
+[ RUN      ] LockManagerTest.DeadlockTest3
+[       OK ] LockManagerTest.DeadlockTest3 (500 ms)
+[----------] 9 tests from LockManagerTest (1104 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 1 test case ran. (1104 ms total)
+[  PASSED  ] 9 tests.
+```
 
 ## 任务二：并发索引
 
@@ -76,3 +122,33 @@ Running main() from gmock_main.cc
 + 仔细考虑`UnpinPage(page_id, is_dirty)`缓冲池管理器类中的`UnLock()`方法与页面类中的方法之间的顺序和关系。在从缓冲池取消固定同一页面之前，必须释放该页面上的锁存器。
 + 如果你正确地实现并发B+树索引，那么每个线程将始终从根到底获取锁存器。释放闩锁时，请确保遵循相同的顺序（也称为从根到下）以避免可能的死锁情况。
 + 其中一个例子是插入和删除时，成员变量`root_page_id（src/include/index/b_plus_tree.h）`也将被更新。您有责任防止此共享变量的并发更新（提示：在B +树索引中添加一个抽象层，您可以使用std::mutex来保护此变量）
+
+
+## 任务二调试
+前面两次实验都需要花很多时间来调试，这次也不例外。。。
+```shell
+test/b_plus_tree_concurrent_test 
+Running main() from gmock_main.cc
+[==========] Running 6 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 6 tests from BPlusTreeConcurrentTest
+[ RUN      ] BPlusTreeConcurrentTest.InsertTest1
+[1]    1189 segmentation fault  test/b_plus_tree_concurrent_test
+```
+用`valgrand`检查得到下面结果(部分)：
+```
+==25834==    at 0x4F47E4A: cmudb::BPlusTreeInternalPage<cmudb::GenericKey<8ul>, int, cmudb::GenericComparator<8ul> >::Lookup(cmudb::GenericKey<8ul> const&, cmudb::GenericComparator<8ul> const&) const (in /home/liu/Desktop/CMU/CMU-15-445/Lab/build/lib/libvtable.so)
+```
+可以看到是在之前内部节点页面中的`Lookup`函数出了问题
+
+检查一遍`Lookup`函数，猜测应该是没有处理边界条件，加上之后，再次编译运行
+```shell
+test/b_plus_tree_concurrent_test
+Running main() from gmock_main.cc
+[==========] Running 6 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 6 tests from BPlusTreeConcurrentTest
+[ RUN      ] BPlusTreeConcurrentTest.InsertTest1
+b_plus_tree_concurrent_test: /home/liu/Desktop/CMU/CMU-15-445/Lab/src/index/b_plus_tree.cpp:670: cmudb::BPlusTreeLeafPage<KeyType, ValueType, KeyComparator>* cmudb::BPlusTree<KeyType, ValueType, KeyComparator>::FindLeafPage(const KeyType&, bool, cmudb::Operation, cmudb::Transaction*) [with KeyType = cmudb::GenericKey<8>; ValueType = cmudb::RID; KeyComparator = cmudb::GenericComparator<8>]: Assertion `node->GetParentPageId() == parent_page_id' failed.
+```
+偶尔会出现上面的情况，或者直接卡死在第一个测试。
