@@ -53,7 +53,7 @@ Lock Manager 将实施WAIT-DIE策略以预防死锁
 ## 任务一调试
 任务一还算比较简单，主要先将锁表的数据结构想好，之后的操作基本上就水到渠成了，但毕竟是多线程的并发，难免会有问题。
 ```
-test/lock_manager_test
+$ test/lock_manager_test
 Running main() from gmock_main.cc
 [==========] Running 9 tests from 1 test case.
 [----------] Global test environment set-up.
@@ -127,7 +127,7 @@ lock_table_[rid].list.erase(it);
 ## 任务二调试
 前面两次实验都需要花很多时间来调试，这次也不例外。。。
 ```shell
-test/b_plus_tree_concurrent_test 
+$ test/b_plus_tree_concurrent_test 
 Running main() from gmock_main.cc
 [==========] Running 6 tests from 1 test case.
 [----------] Global test environment set-up.
@@ -143,7 +143,7 @@ Running main() from gmock_main.cc
 
 检查一遍`Lookup`函数，猜测应该是没有处理边界条件，加上之后，再次编译运行
 ```shell
-test/b_plus_tree_concurrent_test
+$ test/b_plus_tree_concurrent_test
 Running main() from gmock_main.cc
 [==========] Running 6 tests from 1 test case.
 [----------] Global test environment set-up.
@@ -151,4 +151,20 @@ Running main() from gmock_main.cc
 [ RUN      ] BPlusTreeConcurrentTest.InsertTest1
 b_plus_tree_concurrent_test: /home/liu/Desktop/CMU/CMU-15-445/Lab/src/index/b_plus_tree.cpp:670: cmudb::BPlusTreeLeafPage<KeyType, ValueType, KeyComparator>* cmudb::BPlusTree<KeyType, ValueType, KeyComparator>::FindLeafPage(const KeyType&, bool, cmudb::Operation, cmudb::Transaction*) [with KeyType = cmudb::GenericKey<8>; ValueType = cmudb::RID; KeyComparator = cmudb::GenericComparator<8>]: Assertion `node->GetParentPageId() == parent_page_id' failed.
 ```
-偶尔会出现上面的情况，或者直接卡死在第一个测试。
+偶尔会出现上面的情况，或者直接卡死在第一个测试。重新检查实验二中写的代码，修修补补了一些代码。再次编译运行
+```
+$ test/b_plus_tree_concurrent_test 
+Running main() from gmock_main.cc
+[==========] Running 6 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 6 tests from BPlusTreeConcurrentTest
+[ RUN      ] BPlusTreeConcurrentTest.InsertTest1
+[       OK ] BPlusTreeConcurrentTest.InsertTest1 (5 ms)
+[ RUN      ] BPlusTreeConcurrentTest.InsertTest2
+[       OK ] BPlusTreeConcurrentTest.InsertTest2 (2 ms)
+[ RUN      ] BPlusTreeConcurrentTest.DeleteTest1
+[1]    2207 segmentation fault  test/b_plus_tree_concurrent_test
+```
+现在只会出现上面的情况，直接崩溃。第三个测试是删除的测试，再去检查有关删除的函数。
+
+检查后发现`AdjustRoot`这个函数没有考虑删除完最后一个元素后的情况，补充之后，偶尔能通过全部测试。重新测试实验二，发现通不过插入的测试。
