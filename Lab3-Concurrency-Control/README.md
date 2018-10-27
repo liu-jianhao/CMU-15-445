@@ -167,4 +167,28 @@ Running main() from gmock_main.cc
 ```
 现在只会出现上面的情况，直接崩溃。第三个测试是删除的测试，再去检查有关删除的函数。
 
-检查后发现`AdjustRoot`这个函数没有考虑删除完最后一个元素后的情况，补充之后，偶尔能通过全部测试。重新测试实验二，发现通不过插入的测试。
+检查后发现`AdjustRoot`这个函数没有考虑删除完最后一个元素后的情况，补充之后，能通过全部测试了。
+```
+$ test/b_plus_tree_concurrent_test                                                                                                                1 ↵
+Running main() from gmock_main.cc
+[==========] Running 6 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 6 tests from BPlusTreeConcurrentTest
+[ RUN      ] BPlusTreeConcurrentTest.InsertTest1
+[       OK ] BPlusTreeConcurrentTest.InsertTest1 (3 ms)
+[ RUN      ] BPlusTreeConcurrentTest.InsertTest2
+[       OK ] BPlusTreeConcurrentTest.InsertTest2 (1 ms)
+[ RUN      ] BPlusTreeConcurrentTest.DeleteTest1
+[       OK ] BPlusTreeConcurrentTest.DeleteTest1 (0 ms)
+[ RUN      ] BPlusTreeConcurrentTest.DeleteTest2
+[       OK ] BPlusTreeConcurrentTest.DeleteTest2 (1 ms)
+[ RUN      ] BPlusTreeConcurrentTest.MixTest
+[       OK ] BPlusTreeConcurrentTest.MixTest (0 ms)
+[ RUN      ] BPlusTreeConcurrentTest.MixTest2
+[       OK ] BPlusTreeConcurrentTest.MixTest2 (4 ms)
+[----------] 6 tests from BPlusTreeConcurrentTest (9 ms total)
+
+[----------] Global test environment tear-down
+[==========] 6 tests from 1 test case ran. (9 ms total)
+[  PASSED  ] 6 tests.
+```
