@@ -14,6 +14,7 @@ Transaction *TransactionManager::Begin() {
   Transaction *txn = new Transaction(next_txn_id_++);
 
   if (ENABLE_LOGGING) {
+    // TODO: write log and update transaction's prev_lsn here
     LogRecord log(txn->GetTransactionId(), txn->GetPrevLSN(), LogRecordType::BEGIN);
     txn->SetPrevLSN(log_manager_->AppendLogRecord(log));
   }
@@ -37,15 +38,15 @@ void TransactionManager::Commit(Transaction *txn) {
   write_set->clear();
 
   if (ENABLE_LOGGING) {
+    // TODO: write log and update transaction's prev_lsn here
     LogRecord log(txn->GetTransactionId(), txn->GetPrevLSN(), LogRecordType::COMMIT);
     txn->SetPrevLSN(log_manager_->AppendLogRecord(log));
 
-    // make sure log persist, pre lsn is the last one
-    while (txn->GetPrevLSN() > log_manager_->GetPersistentLSN()) {
+    // ???
+    while(txn->GetPrevLSN() > log_manager_->GetPersistentLSN())
+    {
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
-      //LOG_DEBUG("Commit(): spin....\n");
     }
-    //LOG_DEBUG("txn %d: Commit....", txn->GetTransactionId());
   }
 
   // release all the lock
@@ -82,15 +83,13 @@ void TransactionManager::Abort(Transaction *txn) {
   write_set->clear();
 
   if (ENABLE_LOGGING) {
+    // TODO: write log and update transaction's prev_lsn here
     LogRecord log(txn->GetTransactionId(), txn->GetPrevLSN(), LogRecordType::ABORT);
     txn->SetPrevLSN(log_manager_->AppendLogRecord(log));
-
-    // make sure log persist, pre lsn is the last one
-    while (txn->GetPrevLSN() > log_manager_->GetPersistentLSN()) {
+    while(txn->GetPrevLSN() > log_manager_->GetPersistentLSN())
+    {
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
-      //LOG_DEBUG("Abort(): spin....\n");
     }
-    //LOG_DEBUG("txn %d: Abort....", txn->GetTransactionId());
   }
 
   // release all the lock

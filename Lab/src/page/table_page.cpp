@@ -15,8 +15,10 @@ void TablePage::Init(page_id_t page_id, size_t page_size,
                      Transaction *txn) {
   memcpy(GetData(), &page_id, 4); // set page_id
   if (ENABLE_LOGGING) {
+    // TODO: add your logging logic here
+    // 创建一条日志并添加
     LogRecord log(txn->GetTransactionId(), txn->GetPrevLSN(),
-                  LogRecordType::NEWPAGE, prev_page_id);
+                    LogRecordType::NEWPAGE, prev_page_id);
     lsn_t lsn = log_manager->AppendLogRecord(log);
     txn->SetPrevLSN(lsn);
     SetLSN(lsn);
@@ -91,8 +93,10 @@ bool TablePage::InsertTuple(const Tuple &tuple, RID &rid, Transaction *txn,
   if (ENABLE_LOGGING) {
     // acquire the exclusive lock
     assert(lock_manager->LockExclusive(txn, rid.Get()));
+    // TODO: add your logging logic here
+    // 创建一条插入日志并添加
     LogRecord log(txn->GetTransactionId(), txn->GetPrevLSN(),
-                  LogRecordType::INSERT, rid, tuple);
+                    LogRecordType::INSERT, rid, tuple);
     lsn_t lsn = log_manager->AppendLogRecord(log);
     txn->SetPrevLSN(lsn);
     SetLSN(lsn);
@@ -137,17 +141,18 @@ bool TablePage::MarkDelete(const RID &rid, Transaction *txn,
       return false;
     }
 
-    // first copy deleted tuple
-    int32_t tuple_offset = GetTupleOffset(slot_num);
+    // TODO: add your logging logic here
+    // 首先要先制造tuple
     Tuple tuple;
     tuple.size_ = tuple_size;
-    tuple.data_ = new char[tuple.size_];
-    memcpy(tuple.data_, GetData() + tuple_offset, tuple.size_);
+    tuple.data_ = new char[tuple_size];
+    memcpy(tuple.data_, GetData()+GetTupleOffset(slot_num), tuple_size);
     tuple.rid_ = rid;
     tuple.allocated_ = true;
 
+    // 创建一条删除日志并添加
     LogRecord log(txn->GetTransactionId(), txn->GetPrevLSN(),
-                  LogRecordType::MARKDELETE, rid, tuple);
+                    LogRecordType::MARKDELETE, rid, tuple);
     lsn_t lsn = log_manager->AppendLogRecord(log);
     txn->SetPrevLSN(lsn);
     SetLSN(lsn);
@@ -204,8 +209,10 @@ bool TablePage::UpdateTuple(const Tuple &new_tuple, Tuple &old_tuple,
         !lock_manager->LockExclusive(txn, rid)) { // no shared lock
       return false;
     }
+
+    // TODO: add your logging logic here
     LogRecord log(txn->GetTransactionId(), txn->GetPrevLSN(),
-                  LogRecordType::UPDATE, rid, old_tuple, new_tuple);
+                    LogRecordType::UPDATE, rid, old_tuple, new_tuple);
     lsn_t lsn = log_manager->AppendLogRecord(log);
     txn->SetPrevLSN(lsn);
     SetLSN(lsn);
@@ -261,8 +268,9 @@ void TablePage::ApplyDelete(const RID &rid, Transaction *txn,
     assert(txn->GetExclusiveLockSet()->find(rid) !=
         txn->GetExclusiveLockSet()->end());
 
+    // TODO: add your logging logic here
     LogRecord log(txn->GetTransactionId(), txn->GetPrevLSN(),
-                  LogRecordType::APPLYDELETE, rid, delete_tuple);
+                    LogRecordType::APPLYDELETE, rid, delete_tuple);
     lsn_t lsn = log_manager->AppendLogRecord(log);
     txn->SetPrevLSN(lsn);
     SetLSN(lsn);
@@ -301,17 +309,17 @@ void TablePage::RollbackDelete(const RID &rid, Transaction *txn,
     assert(txn->GetExclusiveLockSet()->find(rid) !=
         txn->GetExclusiveLockSet()->end());
 
-    // first copy deleted tuple
-    int32_t tuple_offset = GetTupleOffset(slot_num);
+    // TODO: add your logging logic here
+    // 首先要先制造tuple
     Tuple tuple;
-    tuple.size_ = -tuple_size;
-    tuple.data_ = new char[tuple.size_];
-    memcpy(tuple.data_, GetData() + tuple_offset, tuple.size_);
+    tuple.size_ = tuple_size;
+    tuple.data_ = new char[tuple_size];
+    memcpy(tuple.data_, GetData()+GetTupleOffset(slot_num), tuple_size);
     tuple.rid_ = rid;
     tuple.allocated_ = true;
 
     LogRecord log(txn->GetTransactionId(), txn->GetPrevLSN(),
-                  LogRecordType::ROLLBACKDELETE, rid, tuple);
+                    LogRecordType::ROLLBACKDELETE, rid, tuple);
     lsn_t lsn = log_manager->AppendLogRecord(log);
     txn->SetPrevLSN(lsn);
     SetLSN(lsn);

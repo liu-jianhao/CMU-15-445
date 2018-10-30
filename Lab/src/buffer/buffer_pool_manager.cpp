@@ -62,40 +62,46 @@ BufferPoolManager::~BufferPoolManager()
  */
 Page *BufferPoolManager::FetchPage(page_id_t page_id)
 {
+	assert(page_id != INVALID_PAGE_ID);
 	std::lock_guard<std::mutex> lock(mutex_);
 
 	Page *res = nullptr;
 	if (page_table_->Find(page_id, res))
 	{
+		// mark the Page as pinned
 		++res->pin_count_;
+		// remove its entry from LRUReplacer
 		replacer_->Erase(res);
 		return res;
 	}
 	else
 	{
-		if(!free_list_->empty())
+		if (!free_list_->empty())
 		{
 			res = free_list_->front();
 			free_list_->pop_front();
 		}
 		else
 		{
-			if(!replacer_->Victim(res))
+			if (!replacer_->Victim(res))
 			{
 				return nullptr;
 			}
 		}
 	}
 
-	if(res->is_dirty_)
+	assert(res->pin_count_ == 0);
+	if (res->is_dirty_)
 	{
 		disk_manager_->WritePage(res->page_id_, res->GetData());
 	}
-
+	// delete the entry for old page.
 	page_table_->Remove(res->page_id_);
 
+	// insert an entry for the new page.
 	page_table_->Insert(page_id, res);
 
+	// initial meta data
 	res->page_id_ = page_id;
 	res->is_dirty_ = false;
 	res->pin_count_ = 1;
@@ -115,25 +121,25 @@ bool BufferPoolManager::UnpinPage(page_id_t page_id, bool is_dirty)
 	std::lock_guard<std::mutex> lock(mutex_);
 
 	Page *res = nullptr;
-	if(!page_table_->Find(page_id, res))
+	if (!page_table_->Find(page_id, res))
 	{
 		return false;
 	}
 	else
 	{
-		if(res->pin_count_ > 0)
+		if (res->pin_count_ > 0)
 		{
-			if(--res->pin_count_ == 0)
+			if (--res->pin_count_ == 0)
 			{
 				replacer_->Insert(res);
 			}
-		}	
+		}
 		else
 		{
 			return false;
 		}
-		
-		if(is_dirty)
+
+		if (is_dirty)
 		{
 			res->is_dirty_ = true;
 		}
@@ -151,11 +157,11 @@ bool BufferPoolManager::FlushPage(page_id_t page_id)
 {
 	std::lock_guard<std::mutex> lock(mutex_);
 
-	if(page_id == INVALID_PAGE_ID)
+	if (page_id == INVALID_PAGE_ID)
 		return false;
 
 	Page *res = nullptr;
-	if(page_table_->Find(page_id, res))
+	if (page_table_->Find(page_id, res))
 	{
 		disk_manager_->WritePage(page_id, res->GetData());
 		return true;

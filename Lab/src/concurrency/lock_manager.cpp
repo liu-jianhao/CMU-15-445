@@ -5,44 +5,56 @@
 #include <cassert>
 #include "concurrency/lock_manager.h"
 
-namespace cmudb {
+namespace cmudb
+{
 
-bool LockManager::LockShared(Transaction *txn, const RID &rid) {
+bool LockManager::LockShared(Transaction *txn, const RID &rid)
+{
   std::unique_lock<std::mutex> latch(mutex_);
-  if (txn->GetState() == TransactionState::ABORTED) {
+  if (txn->GetState() == TransactionState::ABORTED)
+  {
     return false;
   }
-  // must be in growing state
+
   assert(txn->GetState() == TransactionState::GROWING);
 
   Request req{txn->GetTransactionId(), LockMode::SHARED, false};
-  if (lock_table_.count(rid) == 0) {
+  if (lock_table_.count(rid) == 0)
+  {
     lock_table_[rid].exclusive_cnt = 0;
     lock_table_[rid].oldest = txn->GetTransactionId();
     lock_table_[rid].list.push_back(req);
-  } else {
+  }
+  else
+  {
     if (lock_table_[rid].exclusive_cnt != 0 &&
-        txn->GetTransactionId() > lock_table_[rid].oldest) {
+        txn->GetTransactionId() > lock_table_[rid].oldest)
+    {
       txn->SetState(TransactionState::ABORTED);
       return false;
     }
-    if (lock_table_[rid].oldest > txn->GetTransactionId()) {
+    if (lock_table_[rid].oldest > txn->GetTransactionId())
+    {
       lock_table_[rid].oldest = txn->GetTransactionId();
     }
     lock_table_[rid].list.push_back(req);
   }
 
-  // maybe blocked
+  // 等待条件变量
   Request *cur = nullptr;
   cond.wait(latch, [&]() -> bool {
-    // all requests before this one are shared and granted
     bool all_shared = true, all_granted = true;
-    for (auto &r: lock_table_[rid].list) {
-      if (r.txn_id != txn->GetTransactionId()) {
-        if (r.mode != LockMode::SHARED || !r.granted) {
+    for (auto &r : lock_table_[rid].list)
+    {
+      if (r.txn_id != txn->GetTransactionId())
+      {
+        if (r.mode != LockMode::SHARED || !r.granted)
+        {
           return false;
         }
-      } else {
+      }
+      else
+      {
         cur = &r;
         return all_shared && all_granted;
       }
@@ -50,47 +62,51 @@ bool LockManager::LockShared(Transaction *txn, const RID &rid) {
     return false;
   });
 
-  // granted shared lock
   assert(cur != nullptr && cur->txn_id == txn->GetTransactionId());
   cur->granted = true;
   txn->GetSharedLockSet()->insert(rid);
 
-  // notify other threads
   cond.notify_all();
   return true;
 }
 
-bool LockManager::LockExclusive(Transaction *txn, const RID &rid) {
+bool LockManager::LockExclusive(Transaction *txn, const RID &rid)
+{
   std::unique_lock<std::mutex> latch(mutex_);
-  if (txn->GetState() == TransactionState::ABORTED) {
+  if (txn->GetState() == TransactionState::ABORTED)
+  {
     return false;
   }
-  // must be in growing state
+
   assert(txn->GetState() == TransactionState::GROWING);
 
   Request req{txn->GetTransactionId(), LockMode::EXCLUSIVE, false};
-  if (lock_table_.count(rid) == 0) {
+  if (lock_table_.count(rid) == 0)
+  {
     lock_table_[rid].oldest = txn->GetTransactionId();
     lock_table_[rid].list.push_back(req);
-  } else {
-    // die
-    if (txn->GetTransactionId() > lock_table_[rid].oldest) {
+  }
+  else
+  {
+    // 如果该请求事务不比等待链表中最老的还老，就die
+    if (txn->GetTransactionId() > lock_table_[rid].oldest)
+    {
       txn->SetState(TransactionState::ABORTED);
       return false;
     }
-    // wait
+
+    // 否则就wait
     lock_table_[rid].oldest = txn->GetTransactionId();
     lock_table_[rid].list.push_back(req);
   }
 
   ++lock_table_[rid].exclusive_cnt;
 
-  // must be first of the waiting list
+  // 排它锁只有在等待队列中的第一个才能获得锁
   cond.wait(latch, [&]() -> bool {
     return lock_table_[rid].list.front().txn_id == txn->GetTransactionId();
   });
 
-  // granted exclusive lock
   assert(lock_table_[rid].list.front().txn_id == txn->GetTransactionId());
 
   lock_table_[rid].list.front().granted = true;
@@ -98,12 +114,14 @@ bool LockManager::LockExclusive(Transaction *txn, const RID &rid) {
   return true;
 }
 
-bool LockManager::LockUpgrade(Transaction *txn, const RID &rid) {
+bool LockManager::LockUpgrade(Transaction *txn, const RID &rid)
+{
   std::unique_lock<std::mutex> latch(mutex_);
-  if (txn->GetState() == TransactionState::ABORTED) {
+  if (txn->GetState() == TransactionState::ABORTED)
+  {
     return false;
   }
-  // must be in growing state
+
   assert(txn->GetState() == TransactionState::GROWING);
 
   // 1. move cur request to the end of `shared` period
@@ -111,12 +129,16 @@ bool LockManager::LockUpgrade(Transaction *txn, const RID &rid) {
   // 3. change lock mode to EXCLUSIVE
   auto src = lock_table_[rid].list.end(), tgt = src;
   for (auto it = lock_table_[rid].list.begin();
-       it != lock_table_[rid].list.end(); ++it) {
-    if (it->txn_id == txn->GetTransactionId()) {
+       it != lock_table_[rid].list.end(); ++it)
+  {
+    if (it->txn_id == txn->GetTransactionId())
+    {
       src = it;
     }
-    if (src != lock_table_[rid].list.end()) {
-      if (it->mode == LockMode::EXCLUSIVE) {
+    if (src != lock_table_[rid].list.end())
+    {
+      if (it->mode == LockMode::EXCLUSIVE)
+      {
         tgt = it;
         break;
       }
@@ -124,9 +146,11 @@ bool LockManager::LockUpgrade(Transaction *txn, const RID &rid) {
   }
   assert(src != lock_table_[rid].list.end());
 
-  // wait-die check: only older txn can wait
-  for (auto it = lock_table_[rid].list.begin(); it != tgt; ++it) {
-    if (it->txn_id < src->txn_id) {
+  // wie-die
+  for (auto it = lock_table_[rid].list.begin(); it != tgt; ++it)
+  {
+    if (it->txn_id < src->txn_id)
+    {
       return false;
     }
   }
@@ -138,14 +162,13 @@ bool LockManager::LockUpgrade(Transaction *txn, const RID &rid) {
   lock_table_[rid].list.insert(tgt, req);
   lock_table_[rid].list.erase(src);
 
-  // maybe blocked
+  // 等地啊条件变量
   cond.wait(latch, [&]() -> bool {
     return lock_table_[rid].list.front().txn_id == txn->GetTransactionId();
   });
 
-  // upgrade to exclusive lock
   assert(lock_table_[rid].list.front().txn_id == txn->GetTransactionId() &&
-      lock_table_[rid].list.front().mode == LockMode::EXCLUSIVE);
+         lock_table_[rid].list.front().mode == LockMode::EXCLUSIVE);
 
   lock_table_[rid].list.front().granted = true;
 
@@ -154,37 +177,44 @@ bool LockManager::LockUpgrade(Transaction *txn, const RID &rid) {
   return true;
 }
 
-bool LockManager::Unlock(Transaction *txn, const RID &rid) {
+bool LockManager::Unlock(Transaction *txn, const RID &rid)
+{
   std::unique_lock<std::mutex> latch(mutex_);
 
-  // if strict 2pl, when unlock txn must be in committed or abort state
-  if (strict_2PL_) {
+  if (strict_2PL_)
+  {
     if (txn->GetState() != TransactionState::COMMITTED &&
-        txn->GetState() != TransactionState::ABORTED) {
+        txn->GetState() != TransactionState::ABORTED)
+    {
       txn->SetState(TransactionState::ABORTED);
       return false;
     }
-  } else {
-    if (txn->GetState() == TransactionState::GROWING) {
-      // turn to shrinking state
+  }
+  else
+  {
+    if (txn->GetState() == TransactionState::GROWING)
+    {
       txn->SetState(TransactionState::SHRINKING);
     }
   }
 
   assert(lock_table_.count(rid));
   for (auto it = lock_table_[rid].list.begin();
-       it != lock_table_[rid].list.end(); ++it) {
-    if (it->txn_id == txn->GetTransactionId()) {
+       it != lock_table_[rid].list.end(); ++it)
+  {
+    if (it->txn_id == txn->GetTransactionId())
+    {
       bool first = it == lock_table_[rid].list.begin();
       bool exclusive = it->mode == LockMode::EXCLUSIVE;
 
-      if (exclusive) {
+      if (exclusive)
+      {
         --lock_table_[rid].exclusive_cnt;
       }
       lock_table_[rid].list.erase(it);
 
-      // if it's first(shared) or exclusive(must be the first), notify all
-      if (first || exclusive) {
+      if (first || exclusive)
+      {
         cond.notify_all();
       }
       break;

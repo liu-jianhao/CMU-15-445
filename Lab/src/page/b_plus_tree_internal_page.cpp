@@ -7,7 +7,8 @@
 #include "common/exception.h"
 #include "page/b_plus_tree_internal_page.h"
 
-namespace cmudb {
+namespace cmudb
+{
 /*****************************************************************************
  * HELPER METHODS AND UTILITIES
  *****************************************************************************/
@@ -16,9 +17,11 @@ namespace cmudb {
  * Including set page type, set current size, set page id, set parent id and set
  * max page size
  */
+// 每次new一个页面后需要自己调用这个函数进行初始化
 template <typename KeyType, typename ValueType, typename KeyComparator>
 void BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-Init(page_id_t page_id, page_id_t parent_id) {
+    Init(page_id_t page_id, page_id_t parent_id)
+{
   // set page type
   SetPageType(IndexPageType::INTERNAL_PAGE);
   // set current size: 1 for the first invalid key
@@ -29,8 +32,8 @@ Init(page_id_t page_id, page_id_t parent_id) {
   SetParentPageId(parent_id);
 
   // set max page size, header is 24bytes
-  int size = (PAGE_SIZE - sizeof(BPlusTreeInternalPage))/
-      (sizeof(KeyType) + sizeof(ValueType));
+  int size = (PAGE_SIZE - sizeof(BPlusTreeInternalPage)) /
+             (sizeof(KeyType) + sizeof(ValueType));
   SetMaxSize(size);
 }
 
@@ -40,7 +43,8 @@ Init(page_id_t page_id, page_id_t parent_id) {
  */
 template <typename KeyType, typename ValueType, typename KeyComparator>
 KeyType BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-KeyAt(int index) const {
+    KeyAt(int index) const
+{
   // replace with your own code
   assert(0 <= index && index < GetSize());
   return array[index].first;
@@ -48,7 +52,8 @@ KeyAt(int index) const {
 
 template <typename KeyType, typename ValueType, typename KeyComparator>
 void BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-SetKeyAt(int index, const KeyType &key) {
+    SetKeyAt(int index, const KeyType &key)
+{
   assert(0 <= index && index < GetSize());
   array[index].first = key;
 }
@@ -59,9 +64,12 @@ SetKeyAt(int index, const KeyType &key) {
  */
 template <typename KeyType, typename ValueType, typename KeyComparator>
 int BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-ValueIndex(const ValueType &value) const {
-  for (int i = 0; i < GetSize(); ++i) {
-    if (array[i].second == value) {
+    ValueIndex(const ValueType &value) const
+{
+  for (int i = 0; i < GetSize(); ++i)
+  {
+    if (array[i].second == value)
+    {
       return i;
     }
   }
@@ -74,7 +82,8 @@ ValueIndex(const ValueType &value) const {
  */
 template <typename KeyType, typename ValueType, typename KeyComparator>
 ValueType BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-ValueAt(int index) const {
+    ValueAt(int index) const
+{
   assert(0 <= index && index < GetSize());
   return array[index].second;
 }
@@ -85,7 +94,8 @@ ValueAt(int index) const {
  */
 template <typename KeyType, typename ValueType, typename KeyComparator>
 void BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-SetValueAt(int index, const ValueType &value) {
+    SetValueAt(int index, const ValueType &value)
+{
   assert(0 <= index && index < GetSize());
   array[index].second = value;
 }
@@ -110,23 +120,33 @@ SetValueAt(int index, const ValueType &value) {
  */
 template <typename KeyType, typename ValueType, typename KeyComparator>
 ValueType BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-Lookup(const KeyType &key, const KeyComparator &comparator) const {
-  // binary search
+    Lookup(const KeyType &key, const KeyComparator &comparator) const
+{
   assert(GetSize() > 1);
-  if (comparator(key, array[1].first) < 0) {
+  if (comparator(key, array[1].first) < 0)
+  {
     return array[0].second;
-  } else if (comparator(key, array[GetSize() - 1].first) >= 0) {
+  }
+  else if (comparator(key, array[GetSize() - 1].first) >= 0)
+  {
     return array[GetSize() - 1].second;
   }
 
+  // 二分查找
   int low = 1, high = GetSize() - 1, mid;
-  while (low < high && low + 1 != high) {
-    mid = low + (high - low)/2;
-    if (comparator(key, array[mid].first) < 0) {
+  while (low < high && low + 1 != high)
+  {
+    mid = low + (high - low) / 2;
+    if (comparator(key, array[mid].first) < 0)
+    {
       high = mid;
-    } else if (comparator(key, array[mid].first) > 0) {
+    }
+    else if (comparator(key, array[mid].first) > 0)
+    {
       low = mid;
-    } else {
+    }
+    else
+    {
       return array[mid].second;
     }
   }
@@ -144,8 +164,9 @@ Lookup(const KeyType &key, const KeyComparator &comparator) const {
  */
 template <typename KeyType, typename ValueType, typename KeyComparator>
 void BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-PopulateNewRoot(const ValueType &old_value, const KeyType &new_key,
-                const ValueType &new_value) {
+    PopulateNewRoot(const ValueType &old_value, const KeyType &new_key,
+                    const ValueType &new_value)
+{
   // must be an empty page
   assert(GetSize() == 1);
   array[0].second = old_value;
@@ -160,10 +181,14 @@ PopulateNewRoot(const ValueType &old_value, const KeyType &new_key,
  */
 template <typename KeyType, typename ValueType, typename KeyComparator>
 int BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-InsertNodeAfter(const ValueType &old_value, const KeyType &new_key,
-                const ValueType &new_value) {
-  for (int i = GetSize(); i > 0; --i) {
-    if (array[i - 1].second == old_value) {
+    InsertNodeAfter(const ValueType &old_value, const KeyType &new_key,
+                    const ValueType &new_value)
+{
+  for (int i = GetSize(); i > 0; --i)
+  {
+    if (array[i - 1].second == old_value)
+    {
+      // 在old_value节点后面插入一个新节点
       array[i] = {new_key, new_value};
       IncreaseSize(1);
       break;
@@ -181,15 +206,18 @@ InsertNodeAfter(const ValueType &old_value, const KeyType &new_key,
  */
 template <typename KeyType, typename ValueType, typename KeyComparator>
 void BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-MoveHalfTo(BPlusTreeInternalPage *recipient,
-           BufferPoolManager *buffer_pool_manager) {
-  auto half = (GetSize() + 1)/2;
+    MoveHalfTo(BPlusTreeInternalPage *recipient,
+               BufferPoolManager *buffer_pool_manager)
+{
+  auto half = (GetSize() + 1) / 2;
   recipient->CopyHalfFrom(array + GetSize() - half, half, buffer_pool_manager);
 
-  // update parent page id of all children
-  for (auto index = GetSize() - half; index < GetSize(); ++index) {
+  // 更新孩子节点的父节点id
+  for (auto index = GetSize() - half; index < GetSize(); ++index)
+  {
     auto *page = buffer_pool_manager->FetchPage(ValueAt(index));
-    if (page == nullptr) {
+    if (page == nullptr)
+    {
       throw Exception(EXCEPTION_TYPE_INDEX,
                       "all page are pinned while CopyLastFrom");
     }
@@ -199,16 +227,17 @@ MoveHalfTo(BPlusTreeInternalPage *recipient,
     assert(child->GetParentPageId() == recipient->GetPageId());
     buffer_pool_manager->UnpinPage(child->GetPageId(), true);
   }
-  IncreaseSize(-1*half);
+  IncreaseSize(-1 * half);
 }
 
 template <typename KeyType, typename ValueType, typename KeyComparator>
 void BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-CopyHalfFrom(MappingType *items, int size,
-             BufferPoolManager *buffer_pool_manager) {
-  // must be a new page
+    CopyHalfFrom(MappingType *items, int size,
+                 BufferPoolManager *buffer_pool_manager)
+{
   assert(!IsLeafPage() && GetSize() == 1 && size > 0);
-  for (int i = 0; i < size; ++i) {
+  for (int i = 0; i < size; ++i)
+  {
     array[i] = *items++;
   }
   IncreaseSize(size - 1);
@@ -224,9 +253,11 @@ CopyHalfFrom(MappingType *items, int size,
  */
 template <typename KeyType, typename ValueType, typename KeyComparator>
 void BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-Remove(int index) {
+    Remove(int index)
+{
   assert(0 <= index && index < GetSize());
-  for (int i = index; i < GetSize() - 1; ++i) {
+  for (int i = index; i < GetSize() - 1; ++i)
+  {
     array[i] = array[i + 1];
   }
   IncreaseSize(-1);
@@ -238,7 +269,8 @@ Remove(int index) {
  */
 template <typename KeyType, typename ValueType, typename KeyComparator>
 ValueType BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-RemoveAndReturnOnlyChild() {
+    RemoveAndReturnOnlyChild()
+{
   IncreaseSize(-1);
   assert(GetSize() == 1);
   return ValueAt(0);
@@ -253,31 +285,33 @@ RemoveAndReturnOnlyChild() {
  */
 template <typename KeyType, typename ValueType, typename KeyComparator>
 void BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-MoveAllTo(BPlusTreeInternalPage *recipient, int index_in_parent,
-          BufferPoolManager *buffer_pool_manager) {
-  // first find parent
+    MoveAllTo(BPlusTreeInternalPage *recipient, int index_in_parent,
+              BufferPoolManager *buffer_pool_manager)
+{
+  // 首先先获得父节点页面
   auto *page = buffer_pool_manager->FetchPage(GetParentPageId());
-  if (page == nullptr) {
+  if (page == nullptr)
+  {
     throw Exception(EXCEPTION_TYPE_INDEX,
                     "all page are pinned while MoveAllTo");
   }
   auto *parent = reinterpret_cast<BPlusTreeInternalPage *>(page->GetData());
 
-  // the separation key from parent
+  // 更新父节点中的key值
   SetKeyAt(0, parent->KeyAt(index_in_parent));
 
-  // assumption: current page is at the right hand of recipient
   assert(parent->ValueAt(index_in_parent) == GetPageId());
 
-  // unpin parent page
   buffer_pool_manager->UnpinPage(parent->GetPageId(), true);
 
   recipient->CopyAllFrom(array, GetSize(), buffer_pool_manager);
 
-  // update parent page id of all children
-  for (auto index = 0; index < GetSize(); ++index) {
+  // 更新孩子节点的父节点id
+  for (auto index = 0; index < GetSize(); ++index)
+  {
     auto *page = buffer_pool_manager->FetchPage(ValueAt(index));
-    if (page == nullptr) {
+    if (page == nullptr)
+    {
       throw Exception(EXCEPTION_TYPE_INDEX,
                       "all page are pinned while CopyLastFrom");
     }
@@ -291,11 +325,13 @@ MoveAllTo(BPlusTreeInternalPage *recipient, int index_in_parent,
 
 template <typename KeyType, typename ValueType, typename KeyComparator>
 void BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-CopyAllFrom(MappingType *items, int size,
-            BufferPoolManager *buffer_pool_manager) {
+    CopyAllFrom(MappingType *items, int size,
+                BufferPoolManager *buffer_pool_manager)
+{
   assert(GetSize() + size <= GetMaxSize());
   int start = GetSize();
-  for (int i = 0; i < size; ++i) {
+  for (int i = 0; i < size; ++i)
+  {
     array[start + i] = *items++;
   }
   IncreaseSize(size);
@@ -310,20 +346,21 @@ CopyAllFrom(MappingType *items, int size,
  */
 template <typename KeyType, typename ValueType, typename KeyComparator>
 void BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-MoveFirstToEndOf(BPlusTreeInternalPage *recipient,
-                 BufferPoolManager *buffer_pool_manager) {
+    MoveFirstToEndOf(BPlusTreeInternalPage *recipient,
+                     BufferPoolManager *buffer_pool_manager)
+{
   assert(GetSize() > 1);
   MappingType pair{KeyAt(1), ValueAt(0)};
   page_id_t child_page_id = ValueAt(0);
   SetValueAt(0, ValueAt(1));
   Remove(1);
 
-  // delegate to helper function
   recipient->CopyLastFrom(pair, buffer_pool_manager);
 
-  // update child parent page id
+  // 更新孩子节点的父节点id
   auto *page = buffer_pool_manager->FetchPage(child_page_id);
-  if (page == nullptr) {
+  if (page == nullptr)
+  {
     throw Exception(EXCEPTION_TYPE_INDEX,
                     "all page are pinned while CopyLastFrom");
   }
@@ -336,11 +373,13 @@ MoveFirstToEndOf(BPlusTreeInternalPage *recipient,
 
 template <typename KeyType, typename ValueType, typename KeyComparator>
 void BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-CopyLastFrom(const MappingType &pair, BufferPoolManager *buffer_pool_manager) {
+    CopyLastFrom(const MappingType &pair, BufferPoolManager *buffer_pool_manager)
+{
   assert(GetSize() + 1 <= GetMaxSize());
 
   auto *page = buffer_pool_manager->FetchPage(GetParentPageId());
-  if (page == nullptr) {
+  if (page == nullptr)
+  {
     throw Exception(EXCEPTION_TYPE_INDEX,
                     "all page are pinned while CopyLastFrom");
   }
@@ -353,7 +392,6 @@ CopyLastFrom(const MappingType &pair, BufferPoolManager *buffer_pool_manager) {
   IncreaseSize(1);
   parent->SetKeyAt(index + 1, pair.first);
 
-  // unpin when we are done
   buffer_pool_manager->UnpinPage(parent->GetPageId(), true);
 }
 
@@ -363,19 +401,20 @@ CopyLastFrom(const MappingType &pair, BufferPoolManager *buffer_pool_manager) {
  */
 template <typename KeyType, typename ValueType, typename KeyComparator>
 void BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-MoveLastToFrontOf(BPlusTreeInternalPage *recipient, int parent_index,
-                  BufferPoolManager *buffer_pool_manager) {
+    MoveLastToFrontOf(BPlusTreeInternalPage *recipient, int parent_index,
+                      BufferPoolManager *buffer_pool_manager)
+{
   assert(GetSize() > 1);
   IncreaseSize(-1);
   MappingType pair = array[GetSize()];
   page_id_t child_page_id = pair.second;
 
-  // delegate
   recipient->CopyFirstFrom(pair, parent_index, buffer_pool_manager);
 
-  // update child parent page id
+  // 更新孩子节点的父节点id
   auto *page = buffer_pool_manager->FetchPage(child_page_id);
-  if (page == nullptr) {
+  if (page == nullptr)
+  {
     throw Exception(EXCEPTION_TYPE_INDEX,
                     "all page are pinned while CopyLastFrom");
   }
@@ -388,12 +427,14 @@ MoveLastToFrontOf(BPlusTreeInternalPage *recipient, int parent_index,
 
 template <typename KeyType, typename ValueType, typename KeyComparator>
 void BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-CopyFirstFrom(const MappingType &pair, int parent_index,
-              BufferPoolManager *buffer_pool_manager) {
+    CopyFirstFrom(const MappingType &pair, int parent_index,
+                  BufferPoolManager *buffer_pool_manager)
+{
   assert(GetSize() + 1 < GetMaxSize());
 
   auto *page = buffer_pool_manager->FetchPage(GetParentPageId());
-  if (page == nullptr) {
+  if (page == nullptr)
+  {
     throw Exception(EXCEPTION_TYPE_INDEX,
                     "all page are pinned while CopyFirstFrom");
   }
@@ -401,7 +442,6 @@ CopyFirstFrom(const MappingType &pair, int parent_index,
 
   auto key = parent->KeyAt(parent_index);
 
-  // set parent key to the last of current page
   parent->SetKeyAt(parent_index, pair.first);
 
   InsertNodeAfter(array[0].second, key, array[0].second);
@@ -415,11 +455,14 @@ CopyFirstFrom(const MappingType &pair, int parent_index,
  *****************************************************************************/
 template <typename KeyType, typename ValueType, typename KeyComparator>
 void BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-QueueUpChildren(std::queue<BPlusTreePage *> *queue,
-                BufferPoolManager *buffer_pool_manager) {
-  for (int i = 0; i < GetSize(); i++) {
+    QueueUpChildren(std::queue<BPlusTreePage *> *queue,
+                    BufferPoolManager *buffer_pool_manager)
+{
+  for (int i = 0; i < GetSize(); i++)
+  {
     auto *page = buffer_pool_manager->FetchPage(array[i].second);
-    if (page == nullptr) {
+    if (page == nullptr)
+    {
       throw Exception(EXCEPTION_TYPE_INDEX,
                       "all page are pinned while printing");
     }
@@ -431,26 +474,34 @@ QueueUpChildren(std::queue<BPlusTreePage *> *queue,
 
 template <typename KeyType, typename ValueType, typename KeyComparator>
 std::string BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>::
-ToString(bool verbose) const {
-  if (GetSize() == 0) {
+    ToString(bool verbose) const
+{
+  if (GetSize() == 0)
+  {
     return "";
   }
   std::ostringstream os;
-  if (verbose) {
+  if (verbose)
+  {
     os << "[" << GetPageId() << "-"
        << GetParentPageId() << "]";
   }
   int entry = verbose ? 0 : 1;
   int end = GetSize();
   bool first = true;
-  while (entry < end) {
-    if (first) {
+  while (entry < end)
+  {
+    if (first)
+    {
       first = false;
-    } else {
+    }
+    else
+    {
       os << " ";
     }
     os << std::dec << " " << array[entry].first.ToString();
-    if (verbose) {
+    if (verbose)
+    {
       os << "(" << array[entry].second << ")";
     }
     ++entry;
