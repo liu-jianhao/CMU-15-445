@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuites tests="1" failures="0" disabled="0" errors="0" timestamp="2018-09-22T11:04:25" time="0.002" name="AllTests">
-  <testsuite name="BptTreeTest" tests="1" failures="0" disabled="0" errors="0" time="0.002">
-    <testcase name="UnitTest" status="run" time="0.002" classname="BptTreeTest" />
-  </testsuite>
-</testsuites>
